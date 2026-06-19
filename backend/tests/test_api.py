@@ -1,6 +1,6 @@
 """API 端点测试 — 使用 FastAPI TestClient，不依赖真实 LLM"""
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 
 def test_health(client):
@@ -103,3 +103,35 @@ def test_incremental_update_same_filename(client):
     # 列表里只有一条记录
     lst = client.get("/api/documents")
     assert len(lst.json()) == 1
+
+
+# ── 文档分块查询（来源跳转/高亮）────────────────────────────
+
+def test_get_document_chunks(client, monkeypatch):
+    with patch("app.api.documents._index_document", new=AsyncMock()):
+        up = client.post(
+            "/api/documents",
+            files={"file": ("手册.md", b"content", "text/markdown")},
+        )
+    doc_id = up.json()["id"]
+
+    import app.api.documents as docs_api
+    fake_rag = MagicMock()
+    fake_rag.get_chunks.return_value = [
+        {"chunk_index": 0, "text": "第一段内容"},
+        {"chunk_index": 1, "text": "第二段内容"},
+    ]
+    monkeypatch.setattr(docs_api, "get_rag", lambda: fake_rag)
+
+    resp = client.get(f"/api/documents/{doc_id}/chunks")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["filename"] == "手册.md"
+    assert len(data["chunks"]) == 2
+    assert data["chunks"][0]["chunk_index"] == 0
+    assert data["chunks"][0]["text"] == "第一段内容"
+
+
+def test_get_document_chunks_404(client):
+    resp = client.get("/api/documents/does-not-exist/chunks")
+    assert resp.status_code == 404

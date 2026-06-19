@@ -16,9 +16,24 @@ export interface DocumentItem {
 }
 
 // ── 聊天 ──────────────────────────────────────────────
-// 后端引用结构当前只含 snippet（内嵌【来源：xxx】）
+// 引用结构含来源定位信息：可点击跳转到原文并高亮所在段落
 export interface Reference {
+  filename: string;
+  chunk_index: number;
+  score: number;
   snippet: string;
+}
+
+// 文档分块（来源跳转/高亮用）
+export interface DocumentChunk {
+  chunk_index: number;
+  text: string;
+}
+
+export interface DocumentChunks {
+  doc_id: string;
+  filename: string;
+  chunks: DocumentChunk[];
 }
 
 export interface ToolCallInfo {

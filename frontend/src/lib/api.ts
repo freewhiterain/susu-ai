@@ -1,5 +1,6 @@
 import type {
   DocumentItem,
+  DocumentChunks,
   ConversationLogItem,
   LogStats,
   SettingsInfo,
@@ -37,6 +38,10 @@ export async function uploadDocument(file: File): Promise<DocumentItem> {
 export async function deleteDocument(id: string): Promise<void> {
   const resp = await fetch(`${BASE}/documents/${id}`, { method: "DELETE" });
   if (!resp.ok) throw new Error(`删除失败 (${resp.status})`);
+}
+
+export async function getDocumentChunks(id: string): Promise<DocumentChunks> {
+  return handle(await fetch(`${BASE}/documents/${id}/chunks`, { cache: "no-store" }));
 }
 
 // ── 日志 ──────────────────────────────────────────────

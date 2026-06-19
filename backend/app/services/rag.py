@@ -139,6 +139,16 @@ class RAGService:
         logger.info(f"Indexed {len(chunks)} chunks for doc={doc_id} ({filename})")
         return len(chunks)
 
+    # 取出某文档的全部 chunk（按 chunk_index 升序），供前端「来源跳转/高亮」查看原文
+    def get_chunks(self, doc_id: str) -> list[dict]:
+        res = self._col.get(where={"doc_id": doc_id}, include=["documents", "metadatas"])
+        items = [
+            {"chunk_index": int(meta["chunk_index"]), "text": text}
+            for text, meta in zip(res["documents"], res["metadatas"])
+        ]
+        items.sort(key=lambda x: x["chunk_index"])
+        return items
+
     # 删除文档所有 chunk
     async def delete(self, doc_id: str) -> None:
         existing = self._col.get(where={"doc_id": doc_id})

@@ -3,8 +3,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { chatStream } from "@/lib/api";
-import type { ChatMessage, Reference } from "@/lib/types";
+import { chatStream, listDocuments, getDocumentChunks } from "@/lib/api";
+import type { ChatMessage, Reference, DocumentChunk } from "@/lib/types";
+
+// 来源跳转目标：定位到某文件的某一段
+type RefTarget = { filename: string; chunkIndex: number };
 
 const TOOL_LABELS: Record<string, string> = {
   search_docs: "📚 检索知识库",
@@ -22,6 +25,7 @@ export default function ChatPanel() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [refTarget, setRefTarget] = useState<RefTarget | null>(null);
   const sessionId = useRef<string>("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -169,9 +173,13 @@ export default function ChatPanel() {
         )}
 
         {messages.map((m, i) => (
-          <MessageBubble key={i} msg={m} />
+          <MessageBubble key={i} msg={m} onOpenRef={setRefTarget} />
         ))}
       </div>
+
+      {refTarget && (
+        <DocViewerModal target={refTarget} onClose={() => setRefTarget(null)} />
+      )}
 
       {/* 输入区 */}
       <div className="border-t border-[var(--border)] bg-white px-4 py-3">
@@ -206,7 +214,13 @@ export default function ChatPanel() {
   );
 }
 
-function MessageBubble({ msg }: { msg: ChatMessage }) {
+function MessageBubble({
+  msg,
+  onOpenRef,
+}: {
+  msg: ChatMessage;
+  onOpenRef: (t: RefTarget) => void;
+}) {
   const isUser = msg.role === "user";
 
   if (isUser) {
@@ -255,7 +269,7 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
           ) : null}
         </div>
 
-        {/* 引用来源 */}
+        {/* 引用来源：可点击跳转到原文并高亮 */}
         {msg.references && msg.references.length > 0 && (
           <details className="text-sm bg-slate-50 border border-[var(--border)] rounded-xl px-3 py-2">
             <summary className="cursor-pointer text-[var(--text-muted)] font-medium">
@@ -263,9 +277,26 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
             </summary>
             <div className="mt-2 space-y-2">
               {msg.references.map((r, i) => (
-                <div key={i} className="text-xs text-slate-600 border-l-2 border-brand pl-2 whitespace-pre-wrap">
-                  {r.snippet}
-                </div>
+                <button
+                  key={i}
+                  onClick={() =>
+                    onOpenRef({ filename: r.filename, chunkIndex: r.chunk_index })
+                  }
+                  title="点击查看原文位置"
+                  className="block w-full text-left border-l-2 border-brand pl-2 py-1 rounded-r hover:bg-brand-light/60 transition group"
+                >
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-medium text-brand-dark group-hover:underline">
+                      📄 {r.filename}
+                    </span>
+                    <span className="text-[var(--text-muted)]">
+                      第 {r.chunk_index + 1} 段 · 相关度 {(r.score * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-600 mt-0.5 line-clamp-2 whitespace-pre-wrap">
+                    {r.snippet.replace(/^【来源：.+?】\s*/, "")}
+                  </div>
+                </button>
               ))}
             </div>
           </details>
@@ -285,4 +316,110 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
 
 function Dot() {
   return <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse inline-block" />;
+}
+
+// 原文查看器：根据来源 filename 解析 doc_id → 拉取全部分块 → 高亮并滚动到引用段落
+function DocViewerModal({
+  target,
+  onClose,
+}: {
+  target: RefTarget;
+  onClose: () => void;
+}) {
+  const [chunks, setChunks] = useState<DocumentChunk[] | null>(null);
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
+  const activeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setErr("");
+      try {
+        const docs = await listDocuments();
+        const doc = docs.find((d) => d.filename === target.filename);
+        if (!doc) throw new Error("未找到对应文档（可能已删除）");
+        const data = await getDocumentChunks(doc.id);
+        if (!cancelled) setChunks(data.chunks);
+      } catch (e) {
+        if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [target.filename]);
+
+  // 加载完成后滚动到高亮段落
+  useEffect(() => {
+    if (chunks && activeRef.current) {
+      activeRef.current.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [chunks]);
+
+  // ESC 关闭
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)]">
+          <div className="font-semibold flex items-center gap-2">
+            📄 {target.filename}
+            <span className="text-xs font-normal text-[var(--text-muted)]">
+              已定位到第 {target.chunkIndex + 1} 段
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-700 text-2xl leading-none"
+            aria-label="关闭"
+          >
+            ×
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+          {loading && <div className="text-[var(--text-muted)] text-sm">加载原文中…</div>}
+          {err && <div className="text-red-600 text-sm">加载失败：{err}</div>}
+          {chunks?.map((c) => {
+            const active = c.chunk_index === target.chunkIndex;
+            return (
+              <div
+                key={c.chunk_index}
+                ref={active ? activeRef : undefined}
+                className={`text-sm whitespace-pre-wrap rounded-lg px-3 py-2 border ${
+                  active
+                    ? "bg-yellow-50 border-yellow-300 ring-2 ring-yellow-200"
+                    : "bg-slate-50 border-transparent text-slate-600"
+                }`}
+              >
+                <div className="text-xs text-[var(--text-muted)] mb-1">
+                  第 {c.chunk_index + 1} 段{active ? " · 引用位置" : ""}
+                </div>
+                {c.text}
+              </div>
+            );
+          })}
+          {chunks && chunks.length === 0 && (
+            <div className="text-[var(--text-muted)] text-sm">该文档暂无可显示的分块。</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -98,6 +98,19 @@ def get_document(doc_id: str, session: Session = Depends(get_session)):
     return doc
 
 
+@router.get("/{doc_id}/chunks")
+def get_document_chunks(doc_id: str, session: Session = Depends(get_session)):
+    """返回文档的全部分块（供前端来源跳转/高亮原文）。"""
+    doc = session.get(Document, doc_id)
+    if not doc:
+        raise HTTPException(404, "文档不存在")
+    return {
+        "doc_id": doc_id,
+        "filename": doc.filename,
+        "chunks": get_rag().get_chunks(doc_id),
+    }
+
+
 @router.delete("/{doc_id}", status_code=204)
 async def delete_document(doc_id: str, session: Session = Depends(get_session)):
     doc = session.get(Document, doc_id)

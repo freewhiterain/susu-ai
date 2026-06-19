@@ -189,6 +189,35 @@ async def test_tool_error_handling():
     assert result.content  # 有兜底回复
 
 
+# ── 引用结构化解析测试 ──────────────────────────────────────
+
+def test_extract_references_structured():
+    """search_docs 工具结果应解析出 filename / chunk_index / score。"""
+    from app.services.agent import _extract_references
+    tool_content = (
+        "【来源：员工手册.md，第1段，相关度0.90】\n年假规则……\n\n---\n\n"
+        "【来源：FAQ.md，第3段，相关度0.75】\n报销说明……"
+    )
+    messages = [{"role": "tool", "tool_name": "search_docs", "content": tool_content}]
+    refs = _extract_references(messages)
+    assert len(refs) == 2
+    assert refs[0]["filename"] == "员工手册.md"
+    assert refs[0]["chunk_index"] == 0          # 第1段 → index 0
+    assert refs[0]["score"] == 0.90
+    assert refs[1]["filename"] == "FAQ.md"
+    assert refs[1]["chunk_index"] == 2          # 第3段 → index 2
+
+
+def test_extract_references_robust_to_separators():
+    """文档正文里本身含 --- 分隔线时，不应把同一片段切断成两条。"""
+    from app.services.agent import _extract_references
+    tool_content = "【来源：手册.md，第1段，相关度0.80】\n# 标题\n---\n正文内容"
+    messages = [{"role": "tool", "tool_name": "search_docs", "content": tool_content}]
+    refs = _extract_references(messages)
+    assert len(refs) == 1
+    assert "正文内容" in refs[0]["snippet"]
+
+
 @pytest.mark.asyncio
 async def test_llm_unavailable_returns_fallback():
     """LLM 完全不可用时，agent 返回友好提示而非 500。"""

@@ -32,15 +32,32 @@ def _cost(usage: LLMUsage) -> float:
     )
 
 
+import re
+
+# 与 tools.utils 中 search_docs 的格式化保持一致：【来源：文件名，第N段，相关度X.XX】
+_SOURCE_RE = re.compile(r"【来源：(.+?)，第(\d+)段，相关度([\d.]+)】")
+
+
 def _extract_references(messages: list[dict]) -> list[dict]:
-    """从工具调用结果中提取 search_docs 的引用信息。"""
-    refs = []
+    """从工具调用结果中提取 search_docs 的结构化引用信息。
+    按来源标记切片（而非按 --- 切，避免文档正文里的分隔线把片段切断），
+    带出 filename / chunk_index / score，供前端跳转并高亮原文。"""
+    refs: list[dict] = []
     for m in messages:
-        if m.get("role") == "tool" and m.get("tool_name") == "search_docs":
-            content = m.get("content", "")
-            for block in content.split("---"):
-                if "【来源：" in block:
-                    refs.append({"snippet": block.strip()})
+        if not (m.get("role") == "tool" and m.get("tool_name") == "search_docs"):
+            continue
+        content = m.get("content", "")
+        matches = list(_SOURCE_RE.finditer(content))
+        for i, mt in enumerate(matches):
+            start = mt.start()
+            end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
+            snippet = content[start:end].strip().strip("-").strip()
+            refs.append({
+                "filename": mt.group(1),
+                "chunk_index": int(mt.group(2)) - 1,
+                "score": float(mt.group(3)),
+                "snippet": snippet,
+            })
     return refs
 
 
