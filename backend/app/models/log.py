@@ -1,6 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlmodel import SQLModel, Field
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class ConversationLog(SQLModel, table=True):
@@ -16,7 +20,7 @@ class ConversationLog(SQLModel, table=True):
     cost_usd: float = Field(default=0.0)
     latency_ms: int = Field(default=0)
     has_reference: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utcnow)
 
 
 class ConversationLogRead(SQLModel):

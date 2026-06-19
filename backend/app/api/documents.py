@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Depends
 from sqlmodel import Session, select
 from loguru import logger
@@ -32,7 +32,7 @@ async def _index_document(doc_id: str, filename: str, content: bytes) -> None:
             logger.error(f"Index failed for {filename}: {e}")
             doc.status = IndexStatus.failed
             doc.error_msg = str(e)[:500]
-        doc.updated_at = datetime.utcnow()
+        doc.updated_at = datetime.now(timezone.utc)
         session.add(doc)
         session.commit()
 
@@ -62,7 +62,7 @@ async def upload_document(
     ).first()
 
     doc_id = existing.id if existing else str(uuid.uuid4())
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     doc = Document(
         id=doc_id,

@@ -1,6 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from sqlmodel import SQLModel, Field
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class IndexStatus(str, Enum):
@@ -17,8 +21,8 @@ class Document(SQLModel, table=True):
     status: IndexStatus = Field(default=IndexStatus.pending)
     chunk_count: int = Field(default=0)
     error_msg: str = Field(default="")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)
 
 
 class DocumentRead(SQLModel):

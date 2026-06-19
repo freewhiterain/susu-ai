@@ -73,24 +73,46 @@ class OpenAIClient(LLMClient):
         if tools:
             kwargs["tools"] = _to_openai_tools(tools)
             kwargs["tool_choice"] = "auto"
+            # 需要在流式结束时拿到 usage
+            kwargs["stream_options"] = {"include_usage": True}
 
         input_tokens = 0
         output_tokens = 0
+        # tool_call 的 delta 是分片到达的，按 index 累积
+        tool_acc: dict[int, dict] = {}
 
         async for chunk in await self._client.chat.completions.create(**kwargs):
+            if chunk.usage:
+                input_tokens = chunk.usage.prompt_tokens
+                output_tokens = chunk.usage.completion_tokens
             choice = chunk.choices[0] if chunk.choices else None
             if not choice:
                 continue
             delta = choice.delta
             if delta.content:
                 yield LLMChunk(delta=delta.content)
-            if chunk.usage:
-                input_tokens = chunk.usage.prompt_tokens
-                output_tokens = chunk.usage.completion_tokens
+            if delta.tool_calls:
+                for tc in delta.tool_calls:
+                    acc = tool_acc.setdefault(tc.index, {"id": "", "name": "", "args": ""})
+                    if tc.id:
+                        acc["id"] = tc.id
+                    if tc.function and tc.function.name:
+                        acc["name"] = tc.function.name
+                    if tc.function and tc.function.arguments:
+                        acc["args"] += tc.function.arguments
 
+        tool_calls = [
+            ToolCall(
+                id=acc["id"],
+                name=acc["name"],
+                input=json.loads(acc["args"] or "{}"),
+            )
+            for _, acc in sorted(tool_acc.items())
+        ]
         yield LLMChunk(
+            tool_calls=tool_calls,
             usage=LLMUsage(input_tokens=input_tokens, output_tokens=output_tokens),
-            stop_reason="end_turn",
+            stop_reason="tool_use" if tool_calls else "end_turn",
         )
 
 
@@ -100,5 +122,7 @@ from functools import lru_cache
 def get_llm_client() -> LLMClient:
     provider = get_settings().llm_provider
     if provider == "claude":
+        # 延迟导入，避免在仅用 openai 时强制加载 anthropic SDK
+        from app.services.llm.claude import ClaudeClient
         return ClaudeClient()
     return OpenAIClient()

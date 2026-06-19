@@ -16,8 +16,22 @@ def _to_claude_tools(tools: list[ToolDefinition]) -> list[dict]:
     ]
 
 
+def _split_system(messages: list[dict]) -> tuple[str, list[dict]]:
+    """Anthropic Messages API 要求 system 作为顶层参数，messages 里只能是 user/assistant。
+    这里把所有 system 消息抽出来拼成顶层 system，其余原样返回。"""
+    system_parts: list[str] = []
+    rest: list[dict] = []
+    for m in messages:
+        if m.get("role") == "system":
+            system_parts.append(str(m.get("content", "")))
+        else:
+            rest.append(m)
+    return "\n\n".join(system_parts), rest
+
+
 def _to_claude_messages(messages: list[dict]) -> list[dict]:
-    """OpenAI 格式 → Claude 格式，合并相邻同 role 消息。"""
+    """OpenAI 格式 → Claude 格式，合并相邻同 role 消息。
+    注意：system 角色须先用 _split_system 剥离，此处不再处理。"""
     result: list[dict] = []
     for m in messages:
         role = m["role"]
@@ -71,11 +85,14 @@ class ClaudeClient(LLMClient):
     async def chat(
         self, messages: list[dict], tools: list[ToolDefinition] | None = None
     ) -> LLMResponse:
+        system, msgs = _split_system(messages)
         kwargs: dict = {
             "model": self._model,
             "max_tokens": 4096,
-            "messages": _to_claude_messages(messages),
+            "messages": _to_claude_messages(msgs),
         }
+        if system:
+            kwargs["system"] = system
         if tools:
             kwargs["tools"] = _to_claude_tools(tools)
 
@@ -102,11 +119,14 @@ class ClaudeClient(LLMClient):
     async def stream(
         self, messages: list[dict], tools: list[ToolDefinition] | None = None
     ) -> AsyncIterator[LLMChunk]:
+        system, msgs = _split_system(messages)
         kwargs: dict = {
             "model": self._model,
             "max_tokens": 4096,
-            "messages": _to_claude_messages(messages),
+            "messages": _to_claude_messages(msgs),
         }
+        if system:
+            kwargs["system"] = system
         if tools:
             kwargs["tools"] = _to_claude_tools(tools)
 
@@ -114,7 +134,14 @@ class ClaudeClient(LLMClient):
             async for text in s.text_stream:
                 yield LLMChunk(delta=text)
             final = await s.get_final_message()
+            # 流式结束后从最终消息里取出工具调用（Claude 的 text_stream 只含文本）
+            tool_calls = [
+                ToolCall(id=b.id, name=b.name, input=b.input)
+                for b in final.content
+                if b.type == "tool_use"
+            ]
             yield LLMChunk(
+                tool_calls=tool_calls,
                 usage=LLMUsage(
                     input_tokens=final.usage.input_tokens,
                     output_tokens=final.usage.output_tokens,

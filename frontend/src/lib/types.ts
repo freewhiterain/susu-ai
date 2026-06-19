@@ -80,6 +80,13 @@ export interface LogStats {
 }
 
 // ── 设置 (Phase 6 /api/settings) ──────────────────────
+export interface ImIntegration {
+  platform: string;
+  configured: boolean;
+  webhook_path: string;
+  verify_enabled: boolean;
+}
+
 export interface SettingsInfo {
   llm_provider: string;
   llm_model: string;
@@ -92,4 +99,5 @@ export interface SettingsInfo {
   redis_connected: boolean;
   document_count: number;
   vector_count: number;
+  im_integrations: ImIntegration[];
 }

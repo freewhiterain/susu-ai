@@ -57,6 +57,21 @@ export default function SettingsPage() {
             />
           </Section>
 
+          <Section title="IM 接入状态">
+            {info.im_integrations.map((im) => (
+              <Row
+                key={im.platform}
+                label={im.platform}
+                value={
+                  im.configured
+                    ? `已接入 · ${im.webhook_path}${im.verify_enabled ? " · 已开启验签" : " · 未开启验签"}`
+                    : "未接入（未配置密钥）"
+                }
+                status={im.configured}
+              />
+            ))}
+          </Section>
+
           <Section title="知识库统计">
             <Row label="文档数量" value={String(info.document_count)} />
             <Row label="向量片段数" value={String(info.vector_count)} />

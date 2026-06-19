@@ -30,6 +30,30 @@ def _vector_count() -> int:
         return 0
 
 
+def _is_set(value: str) -> bool:
+    """配置项是否填写了真实值（排除空串和 .env.example 里的 your-xxx 占位符）。"""
+    return bool(value) and not value.startswith("your-")
+
+
+def _im_integrations() -> list[dict]:
+    """接入的 IM 平台及其配置状态（设置页只读展示，不下发密钥本身）。"""
+    s = get_settings()
+    return [
+        {
+            "platform": "钉钉",
+            "configured": _is_set(s.dingtalk_app_secret),
+            "webhook_path": "/api/webhook/dingtalk",
+            "verify_enabled": _is_set(s.dingtalk_app_secret),
+        },
+        {
+            "platform": "飞书",
+            "configured": _is_set(s.feishu_app_secret),
+            "webhook_path": "/api/webhook/feishu",
+            "verify_enabled": _is_set(s.feishu_verification_token),
+        },
+    ]
+
+
 @router.get("")
 def read_settings(session: Session = Depends(get_session)):
     """返回当前运行配置（只读）。敏感字段（API Key）一律不下发。"""
@@ -61,4 +85,5 @@ def read_settings(session: Session = Depends(get_session)):
         "redis_connected": _redis_connected(),
         "document_count": doc_count,
         "vector_count": _vector_count(),
+        "im_integrations": _im_integrations(),
     }

@@ -170,28 +170,41 @@ async def run_stream(
     )
     trace = trace_cm.__enter__()
     try:
-        # 工具调用轮次（非流式）
+        # 单一流式循环：每一轮都流式生成；若该轮产生工具调用则执行后继续，
+        # 否则即为最终回复（已逐字推送完毕）。避免「非流式生成一遍再流式重生成一遍」的浪费。
+        full_content = ""
         for _ in range(MAX_TOOL_ROUNDS):
             messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
-            resp = await llm.chat(messages, TOOLS)
-            total_usage.input_tokens += resp.usage.input_tokens
-            total_usage.output_tokens += resp.usage.output_tokens
+            turn_text = ""
+            turn_tool_calls: list[ToolCall] = []
 
-            if not resp.tool_calls:
-                break  # 不需要工具，直接流式输出
+            async for chunk in llm.stream(messages, TOOLS):
+                if chunk.delta:
+                    turn_text += chunk.delta
+                    yield _sse({"type": "text", "delta": chunk.delta})
+                if chunk.usage.input_tokens:
+                    total_usage.input_tokens += chunk.usage.input_tokens
+                if chunk.usage.output_tokens:
+                    total_usage.output_tokens += chunk.usage.output_tokens
+                if chunk.tool_calls:
+                    turn_tool_calls = chunk.tool_calls
 
-            assistant_msg: dict = {
+            if not turn_tool_calls:
+                full_content = turn_text
+                history.append({"role": "assistant", "content": full_content})
+                break
+
+            # 该轮有工具调用：记录 assistant 轮次（含可能的前导文本）并执行工具
+            history.append({
                 "role": "assistant",
-                "content": resp.content,
+                "content": turn_text,
                 "tool_calls": [
                     {"id": tc.id, "type": "function",
                      "function": {"name": tc.name, "arguments": json.dumps(tc.input)}}
-                    for tc in resp.tool_calls
+                    for tc in turn_tool_calls
                 ],
-            }
-            history.append(assistant_msg)
-
-            for tc in resp.tool_calls:
+            })
+            for tc in turn_tool_calls:
                 yield _sse({"type": "tool_start", "name": tc.name, "input": tc.input})
                 result = await dispatch(tc.name, tc.input)
                 _append_tool_result(history, tc, result, tc.name)
@@ -199,18 +212,11 @@ async def run_stream(
                 if tc.name == "search_docs":
                     has_reference = True
                 yield _sse({"type": "tool_result", "name": tc.name, "result": result[:300]})
+        else:
+            # 达到最大轮次仍未收敛
+            full_content = turn_text or "处理超时，请重新提问。"
+            history.append({"role": "assistant", "content": full_content})
 
-        # 最终回复流式输出
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
-        full_content = ""
-        async for chunk in llm.stream(messages):
-            if chunk.delta:
-                full_content += chunk.delta
-                yield _sse({"type": "text", "delta": chunk.delta})
-            if chunk.usage.output_tokens:
-                total_usage.output_tokens += chunk.usage.output_tokens
-
-        history.append({"role": "assistant", "content": full_content})
         await save_history(session_id, history)
 
         cost = _cost(total_usage)
