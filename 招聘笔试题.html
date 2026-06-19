@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>招聘笔试题 · 公司内部 AI 助手「小苏」</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#fafafa;color:#1a1a1a;line-height:1.7;font-size:15px}
+.container{max-width:860px;margin:0 auto;padding:48px 24px}
+.hero{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:48px 32px;border-radius:16px;margin-bottom:32px}
+.hero h1{font-size:30px;margin-bottom:12px;font-weight:700}
+.hero p{opacity:0.92;font-size:16px}
+h2{font-size:22px;font-weight:700;margin-top:48px;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #e5e7eb;scroll-margin-top:20px}
+h3{font-size:17px;font-weight:600;margin-top:24px;margin-bottom:10px;color:#1f2937}
+h4{font-size:15px;font-weight:600;margin-top:14px;margin-bottom:6px}
+p{margin-bottom:12px}ul,ol{margin-left:24px;margin-bottom:12px}li{margin-bottom:5px}
+a{color:#2563eb;text-decoration:none}a:hover{text-decoration:underline}
+strong{font-weight:600;color:#000}
+code{background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:13px;font-family:"SF Mono",Consolas,monospace;color:#dc2626}
+pre{background:#1f2937;color:#e5e7eb;padding:14px 16px;border-radius:8px;overflow-x:auto;margin:12px 0;font-size:13px;line-height:1.55}
+pre code{background:none;padding:0;color:inherit}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th,td{border:1px solid #e5e7eb;padding:10px 12px;text-align:left;vertical-align:top}
+th{background:#f9fafb;font-weight:600}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;margin-bottom:16px}
+.card h3:first-child{margin-top:0}
+.checklist{list-style:none;margin-left:0}
+.checklist li{padding-left:28px;position:relative;margin-bottom:8px}
+.checklist li::before{content:"☐";position:absolute;left:2px;top:-2px;color:#2563eb;font-size:18px;font-weight:bold}
+.tag{display:inline-block;background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;margin:0 6px 4px 0}
+.tag.warn{background:#fef2f2;color:#dc2626}.tag.ok{background:#f0fdf4;color:#16a34a}.tag.gray{background:#f3f4f6;color:#6b7280}
+.callout{padding:14px 18px;border-radius:8px;margin:16px 0;border-left:4px solid}.callout p:last-child{margin-bottom:0}
+.callout.warn{background:#fef2f2;border-color:#dc2626;color:#7f1d1d}
+.callout.tip{background:#eff6ff;border-color:#2563eb;color:#1e3a8a}
+.callout.success{background:#f0fdf4;border-color:#16a34a;color:#14532d}
+.toc{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;margin-bottom:32px}
+.toc-title{font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;font-weight:600}
+.toc ol{column-count:2;column-gap:32px;margin-left:20px;margin-bottom:0}.toc a{color:#374151}
+hr{border:none;border-top:1px solid #e5e7eb;margin:32px 0}
+@media (max-width:600px){.container{padding:24px 16px}.hero{padding:32px 20px}.hero h1{font-size:24px}.toc ol{column-count:1}}
+@media print{body{background:#fff}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body><div class="container">
+<header class="hero"><h1>公司内部 AI 助手「小苏」开发</h1><p>全栈 AI Coding 工程师 · 招聘笔试题</p>
+</header>
+<nav class="toc"><div class="toc-title">目录</div><ol>
+<li><a href="#bg">一、背景</a></li>
+<li><a href="#todo">二、你要做的</a></li>
+<li><a href="#bonus">三、加分项</a></li>
+<li><a href="#data">四、数据怎么准备</a></li>
+<li><a href="#stack">五、技术栈</a></li>
+<li><a href="#docs">六、必交的文档</a></li>
+<li><a href="#review">七、面试时怎么验收</a></li>
+<li><a href="#submit">八、提交方式</a></li>
+<li><a href="#score">九、评分</a></li>
+<li><a href="#faq">十、常见问题</a></li>
+</ol></nav>
+
+<h2 id="bg">一、背景</h2>
+<p>我们公司想给员工做一个内部 AI 助手「<strong>小苏</strong>」。员工在<strong>钉钉 / 飞书 / 企业微信</strong>里就能跟它聊天，管理员通过一个 <strong>Web 管理后台</strong>维护知识库和查看对话日志。它能干这些事：</p>
+<ul>
+<li>员工在 IM 里 @ 它问「我能休几天年假？」→ 它从公司<strong>员工手册</strong>里找答案，并附上原文出处</li>
+<li>员工问「张三今天来上班了吗？」→ 它去查<strong>考勤系统 API</strong>，告诉你结果</li>
+<li>员工问「上周三的销售额是多少？」→ 它查<strong>订单系统 API</strong>，并算出汇总</li>
+<li>员工说「再帮我总结一下」→ 它记得上一轮聊了什么</li>
+<li>管理员在 Web 后台上传 / 删除文档，看到员工今天问了哪些问题、哪些没答上来</li>
+</ul>
+<p>你这次的任务，就是把「小苏」<strong>做出来</strong>，放到一个公开仓库（GitHub 或 Gitee 都行，方便我们下载考核），并提供一个能让我们当场体验的 Demo。</p>
+
+<h2 id="todo">二、你要做的：必做清单</h2>
+
+<div class="card"><h3>功能 1：文档知识库 <span class="tag">权重 12%</span></h3>
+<ul class="checklist">
+<li><strong>上传文档</strong>：支持 Markdown / PDF / Word / TXT 至少 3 种格式</li>
+<li><strong>文档列表</strong>：能看到所有已上传文档、索引状态（pending / indexed / failed）</li>
+<li><strong>删除文档</strong>：删除后该文档不再参与问答</li>
+<li><strong>增量更新</strong>：上传同名文件能识别并替换，不重复处理 <span class="tag warn">分水岭</span></li>
+</ul></div>
+
+<div class="card"><h3>功能 2：智能问答 <span class="tag">权重 18%</span></h3>
+<ul class="checklist">
+<li><strong>基于知识库的问答</strong>：答案必须<strong>带引用</strong>（哪个文件、哪一段原文），实现方式不限</li>
+<li><strong>多轮对话</strong>：能记住上下文，支持「再详细讲讲」「换种方式说」</li>
+<li><strong>流式输出</strong>：边生成边显示，不要憋一坨再返回</li>
+<li><strong>拒答机制</strong>：检索不到相关内容时，明确说「文档里没找到」，<strong>不准瞎编</strong></li>
+<li><strong>来源定位</strong>：引用要能点击跳转 / 高亮原文位置（不只是文件名）</li>
+</ul></div>
+
+<div class="card"><h3>功能 3：工具调用 <span class="tag">权重 12%</span></h3>
+<p>至少接入 <strong>2 个工具</strong>，模型要能<strong>自主决定</strong>什么时候查文档、什么时候调工具：</p>
+<ul class="checklist">
+<li><strong>工具 A：内部 API（必做）</strong> —— 你自己用 FastAPI / Express / Next.js API 起一个 mock 服务，提供至少 2 个接口（如 <code>/api/employee/{id}</code>、<code>/api/attendance</code>、<code>/api/orders</code>），数据自己 mock 几条 JSON 即可</li>
+<li><strong>工具 B：通用工具</strong> —— 计算器、当前时间、单位换算，任选其一即可</li>
+</ul>
+<div class="callout warn"><p>⚠️ <strong>关键考点</strong>：模型要根据问题<strong>自己判断</strong>用哪个工具，不是写死的 if-else。</p></div></div>
+
+<div class="card"><h3>功能 4：IM 集成 <span class="tag">权重 15%</span> <span class="tag warn">核心</span></h3>
+<p>这是「小苏」最终给员工用的入口。从 <strong>钉钉 / 飞书 / 企业微信</strong> 中<strong>任选一个</strong>接入，多做一个加分（见加分项）：</p>
+<ul class="checklist">
+<li><strong>注册成机器人</strong>：员工能在群里 @ 小苏，或私聊小苏</li>
+<li><strong>消息收发</strong>：接收用户消息，调用后端处理后回复</li>
+<li><strong>多轮对话</strong>：在 IM 里也要保持上下文（按用户 ID + 会话维度区分）</li>
+<li><strong>引用展示</strong>：答案的引用来源要在 IM 里清晰呈现（卡片 / Markdown / 链接均可）</li>
+<li><strong>错误友好</strong>：后端崩了 / 模型超时，IM 里要有兜底回复，不能用户那边一直转圈</li>
+</ul>
+<div class="callout warn"><p>⚠️ 这一项不能跳过。如果只交了 Web 没接 IM，<strong>视为未完成核心需求</strong>。</p></div>
+<p style="margin-top:8px;color:#6b7280;font-size:13px">小提示：钉钉机器人和飞书机器人都有免费的开发者沙箱，企业微信需要企业认证（可以用试用账号）。建议优先选你之前接触过的，或者钉钉（文档最完善）。</p></div>
+
+<div class="card"><h3>功能 5：Web 管理后台 <span class="tag">权重 8%</span></h3>
+<p>给<strong>管理员</strong>用的，不是给终端员工用的。终端员工在 IM 里聊天，不在这里聊。</p>
+<ul class="checklist">
+<li><strong>文档管理</strong>：上传 / 列表 / 删除（即功能 1 的 UI 入口）</li>
+<li><strong>对话日志</strong>：能看到所有员工的提问历史、回答内容、是否触发了工具、Token 消耗</li>
+<li><strong>设置（可简单）</strong>：切换模型、查看接入的 IM 状态</li>
+<li><strong>备用对话页（可选）</strong>：保留一个 Web 端聊天页，方便管理员调试和你面试时演示</li>
+</ul>
+<p>不要求好看，但要求<strong>能用</strong>。可以用 shadcn/ui、Ant Design、Element Plus 等现成组件库。</p></div>
+
+<div class="card"><h3>功能 6：工程化 <span class="tag warn">分水岭</span></h3>
+<p>多数人会丢分，请认真对待：</p>
+<ul class="checklist">
+<li><strong>一条命令启动</strong>：<code>docker-compose up</code> / <code>pnpm dev</code> / <code>./scripts/start.sh</code></li>
+<li><strong>配置全部外置</strong>：API Key、模型名、Base URL 走环境变量；提供 <code>.env.example</code></li>
+<li><strong>日志输出到 <code>logs/</code> 目录</strong>，不要只打 console</li>
+<li><strong>错误兜底</strong>：API 超时 / 限流 / 模型胡说，要重试或降级，不能直接 500</li>
+<li><strong>至少 3 条自动化测试</strong>，其中至少 1 条用 <strong>Mock LLM</strong>，不依赖真实 API</li>
+<li><strong>README 完整</strong>：项目介绍、架构图（手画也行）、安装、使用、技术栈、Roadmap</li>
+<li><strong><code>.env</code> 不能进仓库</strong>（提交了直接淘汰）</li>
+</ul></div>
+
+<h2 id="bonus">三、加分项</h2>
+<p>不强制，但能拉开差距，面试时会重点关注：</p>
+<ul>
+<li>🌟 <strong>多端 IM 接入</strong>：钉钉 / 飞书 / 企业微信中接通 ≥ 2 个，且**消息处理逻辑能复用**（不是各写一份）</li>
+<li>🌟 <strong>富消息形态</strong>：IM 里支持卡片消息、文件上传问答、@ 群成员等高级交互</li>
+<li>🌟 <strong>多模型适配</strong>：通过统一接口同时支持 ≥ 2 家供应商</li>
+<li>🌟 <strong>Token 计数与成本展示</strong>：UI 里能看到这次对话花了多少 Token / 多少钱</li>
+<li>🌟 <strong>MCP</strong>：把「小苏」做成一个 MCP server，能被 Claude Desktop / Cursor 调用</li>
+<li>🌟 <strong>可观测性</strong>：接 Langfuse / OpenTelemetry，能看到每次请求的链路</li>
+<li>🌟 <strong>Evals</strong>：写一份自动化评测脚本，至少 20 条 case，能跑出准确率</li>
+</ul>
+
+<h2 id="data">四、数据怎么准备</h2>
+<p><strong>所有数据让 AI 自己生成即可</strong>，不需要你去外面找资料。建议规模如下：</p>
+<h4>知识库文档（5-10 篇，约 1-3MB）</h4>
+<ul>
+<li><strong>员工手册.md</strong>：年假、报销、考勤、加班、出差等公司规章制度</li>
+<li><strong>新人入职指南.md</strong>：账号开通、设备申领、培训流程等</li>
+<li><strong>FAQ.md</strong>：员工常问的几十条问题</li>
+<li>再随意补几篇 PDF / Word / TXT 测试格式兼容</li>
+</ul>
+<p>直接让 Claude / GPT 帮你生成这些文档，10 分钟搞定。</p>
+<h4>Mock API 数据（每个 JSON 文件 10-30 条即可）</h4>
+<pre><code>// employees.json
+[{"id": "001", "name": "张三", "dept": "研发部", "level": "P5"}, ...]
+
+// attendance.json
+[{"emp_id": "001", "date": "2026-06-10", "check_in": "09:15", "check_out": "18:30"}, ...]
+
+// orders.json
+[{"id": "O20260601", "amount": 1280, "date": "2026-06-01", "customer": "A 公司"}, ...]</code></pre>
+<p>同样让 AI 一次性生成，注意覆盖一些边界情况（迟到、加班、退款订单等）方便测试。</p>
+<div class="callout tip"><p>我们不考你找数据的能力，考的是你<strong>用这些数据搭出一个能跑的 AI 应用</strong>。所以请把时间花在刀刃上。</p></div>
+
+<h2 id="stack">五、技术栈：完全自由（但有底线）</h2>
+<p><strong>完全自由</strong>：前端、后端语言、向量数据库、模型供应商。</p>
+<p><strong>底线（不遵守扣分）</strong>：</p>
+<ul>
+<li>Python 用 <strong>uv</strong> 管理依赖，虚拟环境必须叫 <code>.venv</code>，禁止 <code>pip install</code></li>
+<li>Node 用 <strong>pnpm</strong>，禁止 commonjs</li>
+<li>用 Next.js → <strong>v15.4+</strong>；用 React → <strong>v19+</strong>；用 Tailwind → <strong>v4+</strong></li>
+<li>启动 / 测试 / 部署的命令统一放在 <code>scripts/*.sh</code></li>
+<li>数据结构强类型（Python 用 Pydantic / dataclass，TS 别滥用 any）</li>
+<li>单文件 ≤ 500 行（Python/TS）/ 800 行（Go/Rust），单目录 ≤ 8 个文件</li>
+</ul>
+<div class="callout tip"><p>这些不是刁难，是入职后的工程规范。能做到说明你能融入。</p></div>
+
+<h2 id="docs">六、必交的文档</h2>
+
+<div class="card"><h3>6.1 README.md（中文）</h3>
+<p>项目介绍、截图、架构图、安装、使用、技术栈、Roadmap</p></div>
+
+<div class="card"><h3>6.2 AI_USAGE.md <span class="tag warn">最重要 · 单独评分</span></h3>
+<p>告诉我们你怎么用 AI 工具做这个项目的，至少回答下面 5 个问题：</p>
+<ol>
+<li>你用了哪些 AI 工具（Claude Code / Cursor / Codex / 其他）？分别用在哪些环节？</li>
+<li>举一个<strong>具体的例子</strong>：你给 AI 的 prompt 是什么、它生成的代码哪里能用、哪里你必须改、为什么改？</li>
+<li>有没有一次 AI 把你带沟里去的经历？你怎么发现的、怎么收拾的？</li>
+<li>你怎么验证 AI 生成的代码是对的？</li>
+<li>如果让你再做一遍，你会怎么调整 AI 的使用方式？</li>
+</ol>
+<div class="callout warn"><p>⚠️ 简历里说「精通 Claude Code」的人很多，能把这五个问题答得有血有肉的人很少。<strong>全是 AI 自动生成的官话直接出局。</strong></p></div></div>
+
+<div class="card"><h3>6.3 自评.md（不超过 1 页）</h3>
+<ul>
+<li>你做的是什么、解决谁的什么问题</li>
+<li>你最得意的 1 个技术决策 + 1 个被迫的妥协</li>
+<li>如果再给你 1 周，你会优先做什么</li>
+</ul></div>
+
+<h2 id="review">七、面试时怎么验收</h2>
+<p>我们会用一份<strong>标准测试问题清单</strong>测你的项目（你做的时候就可以拿这个清单自测）。<strong>所有对话题目都在 IM 里跑</strong>（你接入的钉钉 / 飞书 / 企业微信任意一个），第 7.6 项检查 Web 管理后台。</p>
+
+<h3>7.1 基础问答（看文档问答是否工作）</h3>
+<ol>
+<li>「员工每年有几天年假？」（预期：从员工手册命中，带引用）</li>
+<li>「报销发票需要什么材料？」（预期：命中员工手册）</li>
+<li>「新人入职第一天要做哪些事？」（预期：从新人入职指南命中）</li>
+</ol>
+
+<h3>7.2 工具调用（看 Agent 是否会选工具）</h3>
+<ol start="4">
+<li>「员工 001 是哪个部门的？」（预期：调 <code>/api/employee/001</code>）</li>
+<li>「上周一共多少订单？」（预期：调 <code>/api/orders</code> + 自己算）</li>
+<li>「现在几点？」（预期：调时间工具）</li>
+</ol>
+
+<h3>7.3 多轮对话（看上下文是否保持）</h3>
+<ol start="7"><li>接着 Q4 问：「他上周来上班几天？」（预期：能理解「他」=员工 001，再调考勤 API。<strong>注意</strong>：在 IM 里要按用户/会话维度隔离上下文，不能 A 问的话被 B 接着了）</li></ol>
+
+<h3>7.4 拒答与边界（看会不会瞎编）</h3>
+<ol start="8">
+<li>「我们公司 CEO 的家庭住址是？」（预期：拒答，不准瞎编）</li>
+<li>「2030 年的销售目标是多少？」（预期：说不知道）</li>
+</ol>
+
+<h3>7.5 工程鲁棒性</h3>
+<ol start="10"><li>把模型 API Key 改成无效值，看 IM 里的错误回复是否友好（不能用户那边一直转圈或永久无响应）</li></ol>
+
+<h3>7.6 Web 管理后台检查</h3>
+<ul>
+<li>能看到上面 1-10 题在 IM 里发生的所有对话日志（谁问的、问的什么、回答了什么、调了哪些工具）</li>
+<li>从后台上传一个新文档，立刻去 IM 里问相关问题，能命中</li>
+<li>从后台删除一个文档，再去 IM 里问，不应再命中</li>
+</ul>
+
+<div class="callout tip"><p><strong>面试时</strong>：我们会让你<strong>现场在 IM 里跑这些问题</strong>（你提前把面试官加进测试群即可），并随机挑 1-2 个让你<strong>改一处代码</strong>（比如让你新增一个工具、或调整 prompt），看你是不是真的写过、能不能维护。</p></div>
+
+<h2 id="submit">八、提交方式</h2>
+<p>请发邮件到 📧 <code>&lt;HR 邮箱&gt;</code>，邮件标题：<code>AI助手笔试-姓名-学校</code>，邮件正文给：</p>
+<ol>
+<li><strong>仓库链接</strong>（GitHub 或 Gitee 均可，必须 public，不接受私有 + 截图）</li>
+<li><strong>在线 Demo 链接</strong>（Vercel / Railway / 自己服务器都可；不方便部署的至少给一段 30 秒以内的演示视频）</li>
+<li><strong>可选</strong>：你想让我们重点看的 1-2 个文件路径 + 一句话说明</li>
+</ol>
+<p><strong>不接受</strong>：私有仓库、压缩包邮件、网盘链接。</p>
+
+<h2 id="score">九、评分（100 分制，≥70 进面试）</h2>
+<table>
+<thead><tr><th>维度</th><th>分值</th><th>看什么</th></tr></thead>
+<tbody>
+<tr><td>文档知识库实现</td><td>12</td><td>上传 / 列表 / 删除 / 增量更新</td></tr>
+<tr><td>智能问答质量</td><td>18</td><td>答案准确率、引用、多轮、流式、拒答</td></tr>
+<tr><td>工具调用</td><td>12</td><td>至少 2 个工具，模型自主决策，调用稳定</td></tr>
+<tr><td><strong>IM 集成</strong></td><td><strong>15</strong></td><td><strong>核心</strong>：钉钉 / 飞书 / 企业微信任一接通，多轮、错误兜底</td></tr>
+<tr><td>Web 管理后台</td><td>8</td><td>文档管理 + 对话日志 + 设置</td></tr>
+<tr><td>工程化</td><td>10</td><td>一条命令起、日志、错误处理、配置外置、测试</td></tr>
+<tr><td><strong>AI 工具驾驭力</strong>（AI_USAGE.md）</td><td><strong>15</strong></td><td><strong>核心评分项</strong></td></tr>
+<tr><td>Commit 历史 &amp; 文档</td><td>7</td><td>commit 节奏 + README 质量</td></tr>
+<tr><td>产品意识与取舍</td><td>3</td><td>自评.md 写得有没有想法</td></tr>
+</tbody></table>
+
+<div class="callout warn">
+<p><strong>直接淘汰项</strong>（命中一条立即出局）：</p>
+<ul>
+<li>❌ 仓库私有 / 主分支只有 1 个 "init" commit</li>
+<li>❌ <strong>没接入任何一个 IM 平台</strong>（这是核心需求）</li>
+<li>❌ API Key 提交到了仓库（<code>git log -p</code> 能搜到）</li>
+<li>❌ AI_USAGE.md 缺失或全是套话</li>
+<li>❌ README 跑不起来，且 5 分钟内自己 debug 不出来</li>
+<li>❌ 大段抄开源项目代码且未署名（我们会比对）</li>
+</ul></div>
+
+<h2 id="faq">十、常见问题</h2>
+
+<div class="card"><h4>Q：IM 平台必须三个都接吗？</h4>
+<p>不用。<strong>钉钉 / 飞书 / 企业微信任选一个即可</strong>，做到能稳定收发消息、保持上下文、回复带引用就算合格。多接一个加分（见加分项）。</p>
+<p>建议优先选你之前用过的；都没用过的话，<strong>钉钉文档最完善、注册门槛最低</strong>，可以从它开始。</p></div>
+
+<div class="card"><h4>Q：没有公司账号能注册机器人吗？</h4>
+<p>能。三个平台都有<strong>个人开发者沙箱 / 试用版</strong>，用个人手机号就能注册一个测试组织、创建机器人。具体流程查官方文档：</p>
+<ul>
+<li>钉钉：开放平台 → 开发者后台 → 创建企业内部应用 / 机器人</li>
+<li>飞书：开放平台 → 开发者后台 → 创建企业自建应用</li>
+<li>企业微信：要求企业认证，可申请试用组织</li>
+</ul></div>
+
+<div class="card"><h4>Q：Web 端能不能不做？</h4>
+<p>不能完全不做。Web 管理后台是<strong>必交项</strong>（文档管理 + 对话日志），但权重不高。</p>
+<p>Web 端的<strong>聊天页面</strong>是可选的——我们鼓励你保留一个简单的聊天页方便管理员调试和你面试时演示，但如果时间紧张可以不做，最终验收以 IM 里的对话为准。</p></div>
+
+<div class="card"><h4>Q：可以用 v0 / bolt / lovable 起手吗？</h4>
+<p>可以，但<strong>最终代码要是你能解释、能改、能维护的</strong>。面试会让你现场改一处。</p></div>
+
+<div class="card"><h4>Q：可以参考开源项目吗？</h4>
+<p>可以，但<strong>必须在 README 顶部明确标注 fork 自哪里、你改了什么</strong>。我们关心的是你的增量价值。隐瞒来源 = 失格。</p></div>
+
+<div class="card"><h4>Q：做完会不会被白嫖？</h4>
+<p>不会。代码归你自己，要不要加 LICENSE、加哪种你自己定。哪怕没来我们公司，这也是简历里能放的项目，我们鼓励你<strong>长期维护它</strong>。</p></div>
+
+<div class="card"><h4>Q：可以多人合作吗？</h4>
+<p>不行，个人笔试。</p></div>
+
+<footer style="margin-top:64px;padding:20px 0;border-top:1px solid #e5e7eb;color:#6b7280;font-size:13px;text-align:center">出题人：&lt;填面试官&gt; · 版本 v2.0 · 最后更新 2026-06-12</footer>
+</div></body></html>

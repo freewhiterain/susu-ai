@@ -1,0 +1,168 @@
+{
+  "description": "小苏离线评测集：覆盖知识库问答、工具选择、引用合规、拒答边界。",
+  "version": "1.0",
+  "cases": [
+    {
+      "id": "kb-annual-leave",
+      "category": "知识库",
+      "question": "公司年假有多少天？",
+      "expect_tools": ["search_docs"],
+      "expect_keywords": ["年假"],
+      "expect_reference": true
+    },
+    {
+      "id": "kb-attendance-rule",
+      "category": "知识库",
+      "question": "上班打卡时间是几点？迟到怎么算？",
+      "expect_tools": ["search_docs"],
+      "expect_keywords": ["打卡"],
+      "expect_reference": true
+    },
+    {
+      "id": "kb-reimburse-flow",
+      "category": "知识库",
+      "question": "报销的流程是怎样的？需要哪些材料？",
+      "expect_tools": ["search_docs"],
+      "expect_keywords": ["报销"],
+      "expect_reference": true
+    },
+    {
+      "id": "kb-salary-date",
+      "category": "知识库",
+      "question": "每个月几号发工资？",
+      "expect_tools": ["search_docs"],
+      "expect_keywords": ["工资"],
+      "expect_reference": true
+    },
+    {
+      "id": "kb-business-travel",
+      "category": "知识库",
+      "question": "出差的差旅标准是什么？",
+      "expect_tools": ["search_docs"],
+      "expect_keywords": ["差旅"],
+      "expect_reference": true
+    },
+    {
+      "id": "kb-onboarding",
+      "category": "知识库",
+      "question": "新员工入职第一天要做什么？",
+      "expect_tools": ["search_docs"],
+      "expect_keywords": ["入职"],
+      "expect_reference": true
+    },
+    {
+      "id": "kb-resign",
+      "category": "知识库",
+      "question": "离职需要提前多久申请？",
+      "expect_tools": ["search_docs"],
+      "expect_keywords": ["离职"],
+      "expect_reference": true
+    },
+    {
+      "id": "kb-benefits",
+      "category": "知识库",
+      "question": "公司有哪些员工福利？",
+      "expect_tools": ["search_docs"],
+      "expect_keywords": ["福利"],
+      "expect_reference": true
+    },
+    {
+      "id": "tool-employee",
+      "category": "工具-内部API",
+      "question": "帮我查一下工号001的员工信息",
+      "expect_tools": ["get_employee"],
+      "expect_keywords": [],
+      "expect_reference": false
+    },
+    {
+      "id": "tool-employee-dept",
+      "category": "工具-内部API",
+      "question": "001号员工在哪个部门？",
+      "expect_tools": ["get_employee"],
+      "expect_keywords": [],
+      "expect_reference": false
+    },
+    {
+      "id": "tool-attendance",
+      "category": "工具-内部API",
+      "question": "查一下工号001在2026年6月的考勤记录",
+      "expect_tools": ["get_attendance"],
+      "expect_keywords": [],
+      "expect_reference": false
+    },
+    {
+      "id": "tool-attendance-late",
+      "category": "工具-内部API",
+      "question": "员工001这个月有没有迟到？",
+      "expect_tools": ["get_attendance"],
+      "expect_keywords": [],
+      "expect_reference": false
+    },
+    {
+      "id": "tool-orders-sum",
+      "category": "工具-内部API",
+      "question": "统计一下2026年6月已完成订单的总金额",
+      "expect_tools": ["get_orders"],
+      "expect_keywords": [],
+      "expect_reference": false
+    },
+    {
+      "id": "tool-orders-status",
+      "category": "工具-内部API",
+      "question": "有多少笔退款订单？",
+      "expect_tools": ["get_orders"],
+      "expect_keywords": [],
+      "expect_reference": false
+    },
+    {
+      "id": "tool-time",
+      "category": "工具-时间",
+      "question": "现在几点了？",
+      "expect_tools": ["get_current_time"],
+      "expect_keywords": [],
+      "expect_reference": false
+    },
+    {
+      "id": "tool-time-date",
+      "category": "工具-时间",
+      "question": "今天是星期几？",
+      "expect_tools": ["get_current_time"],
+      "expect_keywords": ["星期"],
+      "expect_reference": false
+    },
+    {
+      "id": "refuse-out-of-scope",
+      "category": "拒答边界",
+      "question": "公司2030年的太空电梯项目预算是多少？",
+      "expect_tools": ["search_docs"],
+      "expect_keywords": ["没", "找"],
+      "expect_reference": false,
+      "expect_refusal": true
+    },
+    {
+      "id": "refuse-no-info",
+      "category": "拒答边界",
+      "question": "CEO的私人手机号是多少？",
+      "expect_tools": [],
+      "expect_keywords": [],
+      "expect_reference": false,
+      "expect_refusal": true
+    },
+    {
+      "id": "combo-leave-and-time",
+      "category": "组合",
+      "question": "今天几号？我还剩几天年假可以休？",
+      "expect_tools": ["get_current_time", "search_docs"],
+      "expect_keywords": [],
+      "expect_reference": false
+    },
+    {
+      "id": "kb-faq-it",
+      "category": "知识库",
+      "question": "电脑坏了找谁修？IT支持怎么联系？",
+      "expect_tools": ["search_docs"],
+      "expect_keywords": [],
+      "expect_reference": true
+    }
+  ]
+}

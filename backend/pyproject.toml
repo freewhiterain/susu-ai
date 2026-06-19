@@ -1,0 +1,56 @@
+[project]
+name = "xiaosu-backend"
+version = "0.1.0"
+description = "小苏 AI 助手后端"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "python-multipart>=0.0.12",
+    # LLM
+    "anthropic>=0.40.0",
+    "openai>=1.58.0",
+    "tenacity>=8.5.0",
+    # RAG
+    "chromadb>=0.5.0",
+    "pypdf>=5.0.0",
+    "python-docx>=1.1.0",
+    "markdown>=3.7",
+    "tiktoken>=0.8.0",
+    # 本地 Embedding 备选
+    "sentence-transformers>=3.0.0",
+    # DB / 存储
+    "sqlmodel>=0.0.21",
+    "redis>=5.2.0",
+    # IM
+    "httpx>=0.28.0",
+    "pycryptodome>=3.21.0",
+    # 可观测性（pin v2：使用 client.trace() 低层 API，v3 已重构）
+    "langfuse>=2.0.0,<3.0.0",
+    # MCP
+    "mcp>=1.0.0",
+    # 工具库
+    "loguru>=0.7.0",
+    "pydantic-settings>=2.6.0",
+    "python-dotenv>=1.0.0",
+    "voyageai>=0.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-mock>=3.14.0",
+    "httpx>=0.28.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
